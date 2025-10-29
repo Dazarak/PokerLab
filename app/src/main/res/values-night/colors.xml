@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="noire">#00140A</color>
+    <color name="blanc">#00140A</color>
+    <color name="backG">#00140A</color>
+    <color name="transparent">#00000000</color>
+    <color name="jaune">#FFC300</color>
+    <color name="orange">#B8701D</color>
+    <color name="vert">#008000</color>
+    <color name="vertclaire">#DFFFDF</color>
+    <color name="gris">#444444</color>
+</resources>

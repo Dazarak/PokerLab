@@ -1,0 +1,45 @@
+<!-- res/values/themes.xml -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme -->
+    <style name="Base.Theme.PokerLab" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/noire</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="android:colorBackground">@color/blanc</item>
+        <item name="android:textColor">@color/vert</item>
+        <item name="android:buttonStyle">@style/ActionButtonStyle</item>
+        <!-- Comment out or remove the following line -->
+        <item name="android:textSize">25sp</item>
+    </style>
+
+    <style name="Theme.PokerLab" parent="Base.Theme.PokerLab" />
+
+    <!-- Custom button style -->
+    <style name="ActionButtonStyle" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/vertclaire</item>
+        <item name="android:textColor">@color/vert</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">@font/casino</item>
+    </style>
+    <!-- Game button style -->
+    <style name="GameButtonStyle" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/vertclaire</item>
+        <item name="android:textColor">@color/vert</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">@font/casino</item>
+    </style>
+    <!-- Custom EditText style -->
+    <style name="EditTextStyle" parent="Widget.Material3.TextInputEditText.FilledBox">
+        <item name="boxBackgroundColor">@color/blanc</item>
+        <item name="android:textColor">@color/vert</item>
+        <item name="android:fontFamily">@font/casino</item>
+        <item name="android:textSize">25sp</item>
+        <item name="android:background">@drawable/border_textbar_rounded_corner</item>
+        <item name="android:ems">10</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">10dp</item>
+    </style>
+    <!-- Custom Background Adapter -->
+    <style name="CustomBackgroundAdapter">
+        <item name="android:background">@color/blanc</item>
+    </style>
+</resources>
