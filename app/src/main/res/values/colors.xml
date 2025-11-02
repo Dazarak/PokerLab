@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- couleur globale -->
     <color name="noire">#00140A</color>
     <color name="blanc">#FFFFFFFF</color>
-    <color name="backG">#ffffff</color>
     <color name="transparent">#00000000</color>
-    <color name="jaune">#FFC300</color>
-    <color name="orange">#B8701D</color>
     <color name="vert">#008000</color>
     <color name="vertclaire">#DFFFDF</color>
     <color name="gris">#444444</color>
+    <color name="textGame">#fff</color>
+    <!-- couleur jeu -->
+    <color name="textCard">#00140A</color>
+    <color name="backgroundCard">#fff</color>
+    <color name="borderCard">#fff</color>
+    <color name="backgroundPopup">#fff</color>
+    <color name="textPopup">#00140A</color>
+    <color name="plateau">#007000</color>
+    <color name="backG">#ffffff</color>
+    <color name="backGreverse">#00140A</color>
+    <color name="iaDataBackground">#aa333344</color>
 </resources>

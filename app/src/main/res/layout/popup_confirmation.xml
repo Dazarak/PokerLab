@@ -21,7 +21,7 @@
             android:fontFamily="@font/casino"
             android:gravity="center"
             android:text="Are you sure ?"
-            android:textColor="@color/blanc"
+            android:textColor="@color/textGame"
             android:textSize="18sp" />
     </LinearLayout>
 

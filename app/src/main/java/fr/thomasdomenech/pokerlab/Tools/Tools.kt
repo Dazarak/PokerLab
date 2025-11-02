@@ -1,23 +1,19 @@
 package fr.thomasdomenech.pokerlab.Tools
 
-import android.app.Dialog
 import android.util.Log
 import android.view.Gravity
 import android.widget.Toast
-import fr.thomasdomenech.pokerlab.Class.Card
+import fr.thomasdomenech.pokerlab.Model.Card
+import fr.thomasdomenech.pokerlab.Model.Action
+import fr.thomasdomenech.pokerlab.Model.State
 import fr.thomasdomenech.pokerlab.Class.Player
+import fr.thomasdomenech.pokerlab.Class.IA
 import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
-import android.view.Window
-import android.view.WindowManager
 import android.widget.TextView
+import com.google.gson.Gson
 import fr.thomasdomenech.pokerlab.R
 import java.io.File
-import kotlin.contracts.contract
 
 data class PlayerHand(val name: String, val hand: String, val highCards: List<Int>)
 
@@ -321,10 +317,10 @@ fun cardValueToRank(value: String): Int {
 
 fun showInformationPopup(title: String, content: String, context: Context) {
     val inflater = LayoutInflater.from(context)
-    val layout = inflater.inflate(R.layout.custom_toast, null)
+    val layout = inflater.inflate(R.layout.popup_information, null)
 
-    val titleTextView = layout.findViewById<TextView>(R.id.toastTitleTextView)
-    val contentTextView = layout.findViewById<TextView>(R.id.toastContentTextView)
+    val titleTextView = layout.findViewById<TextView>(R.id.informationTitleTextView)
+    val contentTextView = layout.findViewById<TextView>(R.id.informationContentTextView)
     titleTextView.text = title
     contentTextView.text = content
 
@@ -358,4 +354,53 @@ fun ReadUserChoice(context: Context): List<Int> {
     val token = if (lines.size > 1) lines[1].toInt() else 20
 
     return listOf(iaSpeed, token)
+}
+
+fun mergeQTables(ias: List<IA>, calculateWinRate: (IA) -> Double): MutableMap<State, Action> {
+    val mergedQ: MutableMap<State, Action> = mutableMapOf()
+    if (ias.isEmpty()) return mergedQ
+
+    val weights = ias.associateWith { calculateWinRate(it).coerceAtLeast(0.0) }
+    val totalWeight = weights.values.sum().takeIf { it > 0 } ?: 1.0
+
+    for ((ia, weightRaw) in weights) {
+        val weight = weightRaw / totalWeight
+        for ((state, action) in ia.Q) {
+            val target = mergedQ.getOrPut(state) { Action() }
+            target.Check += action.Check * weight
+            target.Call  += action.Call  * weight
+            target.Fold  += action.Fold  * weight
+            target.Raise += action.Raise * weight
+            target.RaisePourcent = (
+                    target.RaisePourcent * (1 - weight) +
+                            action.RaisePourcent * weight
+                    ).toInt()
+        }
+    }
+
+    return mergedQ
+}
+
+fun saveQTable(Q: Map<State, Action>, filePath: String) {
+    try {
+        val gson = Gson()
+        File(filePath).writeText(gson.toJson(Q))
+    } catch (e: Exception) {
+        println("Erreur lors de la sauvegarde de la QTable : ${e.message}")
+    }
+}
+
+
+fun loadQTable(filePath: String): MutableMap<State, Action> {
+    return try {
+        val file = File(filePath)
+        if (!file.exists()) return mutableMapOf()
+
+        val gson = Gson()
+        val type = object : com.google.gson.reflect.TypeToken<Map<State, Action>>() {}.type
+        gson.fromJson<Map<State, Action>>(file.readText(), type).toMutableMap()
+    } catch (e: Exception) {
+        println("Erreur lors du chargement de la QTable : ${e.message}")
+        mutableMapOf()
+    }
 }

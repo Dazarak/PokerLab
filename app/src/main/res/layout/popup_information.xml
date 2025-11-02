@@ -22,7 +22,7 @@
             android:fontFamily="@font/casino"
             android:gravity="center"
             android:text="Title"
-            android:textColor="@color/blanc"
+            android:textColor="@color/textGame"
             android:textSize="18sp" />
     </LinearLayout>
 
@@ -41,7 +41,7 @@
             android:fontFamily="@font/casino"
             android:gravity="center"
             android:text="Content"
-            android:textColor="@android:color/black"
+            android:textColor="@color/textPopup"
             android:textSize="16sp" />
     </LinearLayout>
 </LinearLayout>

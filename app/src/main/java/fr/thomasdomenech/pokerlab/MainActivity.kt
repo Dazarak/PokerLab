@@ -92,6 +92,20 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
+        startingAmountEditText.addTextChangedListener(object : TextWatcher {
+            @SuppressLint("SetTextI18n")
+            override fun afterTextChanged(s: Editable?) {
+                val startingAmount = s.toString().toIntOrNull() ?: 0
+                if (startingAmount < 50)
+                    startingAmountEditText.setText("50")
+                if (startingAmount > 100000)
+                    startingAmountEditText.setText("10000")
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
         smallBlindSeekBar.setOnSeekBarChangeListener(createSeekBarChangeListener(smallBlindEditText, ::incrementSmallBlind, ::decrementSmallBlind))
         startingAmountSeekBar.setOnSeekBarChangeListener(createSeekBarChangeListener(startingAmountEditText, ::incrementStartingAmount, ::decrementStartingAmount))
         numIaSeekBar.setOnSeekBarChangeListener(createSeekBarChangeListener(numIaEditText, ::incrementNumIa, ::decrementNumIa))
@@ -177,8 +191,7 @@ class MainActivity : AppCompatActivity() {
     private fun incrementSmallBlind() {
         val smallBlindEditText = findViewById<EditText>(R.id.smallBlind)
         val currentValue = smallBlindEditText.text.toString().toIntOrNull() ?: 0
-        if (currentValue < 10)
-            smallBlindEditText.setText((currentValue + 1).toString())
+        smallBlindEditText.setText((currentValue + 1).toString())
     }
 
     @SuppressLint("SetTextI18n")
@@ -193,8 +206,7 @@ class MainActivity : AppCompatActivity() {
     private fun incrementStartingAmount() {
         val startingAmountEditText = findViewById<EditText>(R.id.startingAmount)
         val currentValue = startingAmountEditText.text.toString().toIntOrNull() ?: 0
-        if (currentValue < 1000)
-            startingAmountEditText.setText((currentValue + 50).toString())
+        startingAmountEditText.setText((currentValue + 50).toString())
     }
 
     @SuppressLint("SetTextI18n")

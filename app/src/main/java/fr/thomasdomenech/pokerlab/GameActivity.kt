@@ -1,45 +1,27 @@
 package fr.thomasdomenech.pokerlab
 
 import android.annotation.SuppressLint
-import android.app.Dialog
-import android.graphics.drawable.ColorDrawable
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.LayoutInflater
 import fr.thomasdomenech.pokerlab.Tools.showInformationPopup
 import android.view.View
-import android.view.Window
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
-import android.view.Gravity
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
-import fr.thomasdomenech.pokerlab.Class.Card
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import fr.thomasdomenech.pokerlab.Class.Deck
-import fr.thomasdomenech.pokerlab.Class.IA
-import fr.thomasdomenech.pokerlab.Class.Player
-import fr.thomasdomenech.pokerlab.Class.User
-import fr.thomasdomenech.pokerlab.Tools.evaluateHand
-import fr.thomasdomenech.pokerlab.Tools.evaluateHands
-import fr.thomasdomenech.pokerlab.Tools.getWinnerName
+import fr.thomasdomenech.pokerlab.Model.*
+import fr.thomasdomenech.pokerlab.Class.*
+import fr.thomasdomenech.pokerlab.Model.ActionString
+import fr.thomasdomenech.pokerlab.Tools.*
+import org.w3c.dom.Text
 import java.io.File
 import kotlin.math.floor
 
 class GameActivity : AppCompatActivity() {
-
-    private val SYSTEM_ALERT_WINDOW_PERMISSION = 2084
-
     private var deck: Deck? = null
     private var user: User? = null
     private val iaList = mutableListOf<IA>()
@@ -50,7 +32,7 @@ class GameActivity : AppCompatActivity() {
     private var PlayerTurn: Int? = 1
     private var round: Int? = 0
     private var pot: Int? = 0
-    private var maxNoney: Int = 0
+    private var maxMoney: Int = 0
     private var partyNumber: Int = 1
     private var partyAlreadyStart: Boolean = true
     private var smallBlind: Int = 0
@@ -63,7 +45,7 @@ class GameActivity : AppCompatActivity() {
     private var totalBet: Int = 0
 
     private var playerPlayed: Boolean = false
-    private var ListDeNom = listOf("Elise", "Antoine", "Catherine", "Philippe", "Marie", "Thomas", "Julie", "Jade", "Arnaud", "Pierre", "Paul", "Jacques", "Jean", "Luc", "Lucas", "Lucie", "Lea", "Leo", "Lola", "Leon", "Lena", "Lilou", "Lina", "Louna", "Louane", "Louise")
+    private var ListDeNom = listOf("Elise", "Antoine", "Catherine", "Philippe", "Marie", "Julie", "Jade", "Pierre", "Paul", "Jacques", "Jean", "Luc", "Lucas", "Lucie", "Lea", "Leo", "Lola", "Leon", "Lena", "Lilou", "Lina", "Louna", "Louane", "Louise")
 
     private fun updatePlayerStats() {
         if (playerStats != null) {
@@ -77,35 +59,6 @@ class GameActivity : AppCompatActivity() {
         finish()
     }
 
-    fun showWinnerPopup(winnerNames: String) {
-        val dialog = Dialog(this)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setCancelable(false)
-        val view = LayoutInflater.from(this).inflate(R.layout.popup_winner, null)
-        dialog.setContentView(view)
-
-        // Set the window background to transparent
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-        val winnerNamesContainer = view.findViewById<LinearLayout>(R.id.winnerNamesContainer)
-        val textView = TextView(this)
-        textView.text = winnerNames
-        textView.textSize = 16f
-        textView.setTextColor(ContextCompat.getColor(this, android.R.color.black))
-        textView.typeface = ResourcesCompat.getFont(this, R.font.casino)
-        textView.gravity = Gravity.CENTER
-        winnerNamesContainer.addView(textView)
-
-        dialog.show()
-
-        // Dismiss the dialog after 2 seconds if the activity is still running
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (!isFinishing && !isDestroyed) {
-                dialog.dismiss()
-            }
-        }, 2000)
-    }
-
     // Calculate the win rate for each AI
     private fun calculateWinRate(ia: IA): Double {
         val wins = iaVictoryCounts.getOrDefault(ia.name, 0)
@@ -113,7 +66,7 @@ class GameActivity : AppCompatActivity() {
         val totalGames = wins + losses
         val winRate = if (totalGames == 0) 0.0 else wins.toDouble() / totalGames
 
-        val gain = if (totalGames == 0) 0.0 else ia.money - maxNoney
+        val gain = if (totalGames == 0) 0.0 else ia.money - maxMoney
 
         return (winRate * gain.toDouble()) // Combine win rate and gain rate
     }
@@ -166,18 +119,14 @@ class GameActivity : AppCompatActivity() {
 
         // Evaluate hands of all players
         val allPlayers = mutableListOf<Player>()
-        if (user!!.action != "Fold" && user!!.action != "Lost") {
+        if (user!!.action != ActionString.Fold && user!!.action != "Lost") {
             allPlayers.add(Player(user!!.name, user!!.card1!!, user!!.card2!!))
         }
         for (ia in iaList) {
-            if (ia.action != "Fold") {
+            if (ia.action != ActionString.Fold) {
                 allPlayers.add(Player(ia.name, ia.card1!!, ia.card2!!))
             }
         }
-
-        // Find the AI with the highest win rate
-        val bestIA = iaList.maxByOrNull { calculateWinRate(it) }
-
         // Donner l'argent aux gagnants
         val result = getWinnerName(allPlayers, communityCards)
         val winnerList: List<String> = result.split(", ")
@@ -195,10 +144,8 @@ class GameActivity : AppCompatActivity() {
                     if (winner == ia.name) {
                         iaVictoryCounts[ia.name] = iaVictoryCounts.getOrDefault(ia.name, 0) + 1 // Increment the victory count
                         ia.money += floor(pot!!.toDouble() / winnerList.size).toInt()
-                        ia.learnFromResult(true, bestIA!!) // Learn from the result
                     } else {
                         iaLossesCounts[ia.name] = iaLossesCounts.getOrDefault(ia.name, 0) + 1 // Increment the loss count
-                        ia.learnFromResult(false, bestIA!!) // Learn from the result
                     }
                 }
             }
@@ -211,52 +158,27 @@ class GameActivity : AppCompatActivity() {
             updatePlayerStats()
         }
 
-        // Find the top 3 AI with the highest combined win and gain rate
-        val sortedIaList = iaList.sortedByDescending { calculateWinRate(it) }
+        // Modifier les Qtable de chaque IA
+        for (ia in iaList)
+        {
+            ia.learnFromResult()
+            ia.evolveBehavior(ia.money - ia.initialMoney)
 
-        // Function to save AI if it has better statistics
-        fun saveIfBetter(newIa: IA, filePath: String) {
-            val existingIa = IA.load(filePath)
-            if (existingIa == null || calculateWinRate(newIa) > calculateWinRate(existingIa)) {
-                newIa.save(filePath)
-            }
         }
+        // Save common QTable
+        val mergedQ = mergeQTables(iaList) { ia -> calculateWinRate(ia) }
+        saveQTable(mergedQ, applicationContext.filesDir.path + "/merged_qtable.json")
 
-        // Save the top 3 AI
-        if (sortedIaList.isNotEmpty()) {
-            saveIfBetter(sortedIaList[0], applicationContext.filesDir.path + "/best_ia.json")
+        // Reset inital money of the IA to the next hand
+        for (ia in iaList)
+        {
+            ia.initialMoney = ia.money
         }
-        if (sortedIaList.size > 1) {
-            saveIfBetter(sortedIaList[1], applicationContext.filesDir.path + "/second_ia.json")
-        }
-        if (sortedIaList.size > 2) {
-            saveIfBetter(sortedIaList[2], applicationContext.filesDir.path + "/third_ia.json")
-        }
-
-        // Fuse the AI
-        var index = 0
-        for (ia in iaList) {
-            val AIdata = ia
-            if (sortedIaList.isNotEmpty()) {
-                val bestIa1 = sortedIaList.random()
-                val bestIa2 = sortedIaList.filter { it != bestIa1 }.randomOrNull()
-                if (bestIa2 != null) {
-                    val fusedIa = IA.crossover(bestIa1, bestIa2)
-                    fusedIa.name = AIdata.name
-                    fusedIa.money = AIdata.money
-                    fusedIa.action = AIdata.action
-                    fusedIa.bet = AIdata.bet
-                    fusedIa.turn = AIdata.turn
-                    fusedIa.card1 = AIdata.card1
-                    fusedIa.card2 = AIdata.card2
-                    iaList[index] = fusedIa
-                }
-            }
-            index++
-        }
-
         // show winner(s)
-        showWinnerPopup(result)
+        if (result.length == 1)
+            showInformationPopup("Winner", result, this@GameActivity)
+        else
+            showInformationPopup("Winners", result, this@GameActivity)
         // reset pot
         pot = 0
         round = 0
@@ -349,12 +271,6 @@ class GameActivity : AppCompatActivity() {
         communityCards = distributeCommunityCards(deck!!)
         updateCommunityCards("None")
     }
-
-    override fun finish() {
-        partyAlreadyStart = false
-        super.finish()
-    }
-
     fun playGame() {
         val handler = Handler(Looper.getMainLooper())
         val gameRunnable = object : Runnable {
@@ -439,9 +355,9 @@ class GameActivity : AppCompatActivity() {
                     if (shouldEndRound(user!!, iaList)) {
                         pot = pot?.plus(user!!.bet)
                         for (ia in iaList) {
-                            if (ia.action != "Fold") {
+                            if (ia.action != ActionString.Fold) {
                                 if (ia.money == 0) {
-                                    ia.action = "All-in"
+                                    ia.action = ActionString.AllIn
                                 } else {
                                     ia.action = ""
                                 }
@@ -520,7 +436,7 @@ class GameActivity : AppCompatActivity() {
                     }
                     if (user!!.turn == PlayerTurn) {
                         if (user!!.money >= 0) {
-                            if (user!!.action == "Fold") {
+                            if (user!!.action == ActionString.Fold) {
                                 continueGame()
                             } else if (shouldPlayerPlay()) {
                                 if (round != -1)
@@ -535,7 +451,7 @@ class GameActivity : AppCompatActivity() {
                         for (ia in iaList) {
                             if (ia.turn == PlayerTurn) {
                                 if (ia.money > 0) {
-                                    if (ia.action != "Fold") {
+                                    if (ia.action != ActionString.Fold) {
                                         if (iaShouldPlay(ia)) {
                                             if (round != -1) {
                                                 var biggest_bet = iaList.maxByOrNull { it.bet }?.bet ?: 0
@@ -548,12 +464,21 @@ class GameActivity : AppCompatActivity() {
                                                 for (i in 0 until round!!) {
                                                     visibleCards.add(communityCards[i]!!)
                                                 }
-
-                                                // Calcul de mise en cours
-                                                var miseEnCours = iaList.sumOf { it.bet } + user!!.bet
+                                                // Etat de la partie qui va determiner l'action
+                                                val Etat = State(
+                                                    _hand = listOf(ia.card1!!, ia.card2!!), // main de l'IA
+                                                    _commonCard = visibleCards,             // cartes visibles
+                                                    currentMoney = ia.money,                // argent actuel
+                                                    maxMoney = maxMoney,                    // stack max ou initial
+                                                    currentPot = pot!!,                     // pot actuel
+                                                    maxPot = (maxMoney * iaList.size),      // pot max possible
+                                                    _phase = round!!,                       // phase actuelle ("preflop", "flop", etc.)
+                                                    pos = ia.turn,                          // position à la table
+                                                    nbPlayer = (iaList.size + 1)            // Nombre de joueur
+                                                )
 
                                                 // Ajout de miseEnCours au pot
-                                                ia.decideAction(biggest_bet, visibleCards, pot!! + miseEnCours - ia.bet)
+                                                ia.play(Etat, biggest_bet, pot!!)
 
                                                 // Mise à jour de l'affichage
                                                 updateIaViews(showAIAction = true, showAICards = false)
@@ -589,7 +514,7 @@ class GameActivity : AppCompatActivity() {
         if ((biggest_bet <= ia.bet) && (biggest_bet != 0) && (ia.action != "")) {
             return false
         }
-        if (iaList.all { it.action == "Fold" || it.name == ia.name || it.action == "All-in" } && (user!!.action == "Fold" || user!!.action == "Lost") && ia.bet >= biggest_bet) {
+        if (iaList.all { it.action == ActionString.Fold || it.name == ia.name || it.action == ActionString.AllIn } && (user!!.action == ActionString.Fold || user!!.action == "Lost") && ia.bet >= biggest_bet) {
             ia.action = "..."
             return false
         }
@@ -605,7 +530,7 @@ class GameActivity : AppCompatActivity() {
         }
 
         // Vérifier si toute les autres IA sont couché ou all-in ou pas d'argent
-        if (iaList.all { it.action == "Fold" || it.action == "All-in" || it.money <= 0 } && user!!.bet >= biggest_bet) {
+        if (iaList.all { it.action == ActionString.Fold || it.action == ActionString.AllIn || it.money <= 0 } && user!!.bet >= biggest_bet) {
             return false
         }
 
@@ -655,14 +580,14 @@ class GameActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.bt_Check).setOnClickListener {
-            user!!.action = "Check"
+            user!!.action = ActionString.Check
             playerStats?.check = playerStats?.check?.plus(1) ?: 0
             updatePlayerStats()
             continueGame()
         }
 
         findViewById<Button>(R.id.bt_Call).setOnClickListener {
-            user!!.action = "Call"
+            user!!.action = ActionString.Call
             val biggest_bet = iaList.maxByOrNull { it.bet }!!.bet
             if (user!!.bet > 0) {
                 if (biggest_bet > user!!.money) {
@@ -695,13 +620,13 @@ class GameActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.bt_Fold).setOnClickListener {
-            user!!.action = "Fold"
+            user!!.action = ActionString.Fold
             playerStats?.fold = playerStats?.fold?.plus(1) ?: 0
             continueGame()
         }
 
         findViewById<Button>(R.id.bt_Raise).setOnClickListener {
-            user!!.action = "Raise"
+            user!!.action = ActionString.Raise
             if (user!!.bet > 0) {
                 user!!.bet += seekBar?.progress ?: 0
                 totalBet += seekBar?.progress ?: 0
@@ -764,11 +689,11 @@ class GameActivity : AppCompatActivity() {
         // Condition 1: All players have the same bet or are folded or can't bet much
         var shouldEndBecauseOfSameBetOrFoldedOrNoMonney = true
         for (ia in iaList) {
-            if (ia.bet != maxBet && ia.action != "Fold" && ia.money > 0) {
+            if (ia.bet != maxBet && ia.action != ActionString.Fold && ia.money > 0) {
                 shouldEndBecauseOfSameBetOrFoldedOrNoMonney = false
             }
         }
-        if (user.bet != maxBet && user.action != "Fold" && user.money > 0) {
+        if (user.bet != maxBet && user.action != ActionString.Fold && user.money > 0) {
             shouldEndBecauseOfSameBetOrFoldedOrNoMonney = false
         }
 
@@ -810,7 +735,7 @@ class GameActivity : AppCompatActivity() {
         bigBlind = intent.getStringExtra("bigBlindEditText")!!.toInt()
         val startingAmount = intent.getStringExtra("startingAmountEditText")
         val numIa = intent.getStringExtra("numIaEditText")?.toIntOrNull() ?: 0
-        maxNoney = startingAmount?.toIntOrNull() ?: 0
+        maxMoney = startingAmount?.toIntOrNull() ?: 0
 
         // Set IA visibility based on the number of IA chosen
         setIaVisibility(numIa)
@@ -828,56 +753,15 @@ class GameActivity : AppCompatActivity() {
 
         seekBar?.max = user?.money ?: 0
 
-        // Load the best, second, and third AI if they exist
-        val bestIaFile = File(applicationContext.filesDir.path + "/best_ia.json")
-        val secondIaFile = File(applicationContext.filesDir.path + "/second_ia.json")
-        val thirdIaFile = File(applicationContext.filesDir.path + "/third_ia.json")
-
-        val bestIa = IA.load(bestIaFile.path)
-        val secondIa = IA.load(secondIaFile.path)
-        val thirdIa = IA.load(thirdIaFile.path)
-
-        // Sort the AI by their victory counts in descending order
-        val loadedIaList = listOfNotNull(bestIa, secondIa, thirdIa)
-
         // Create AI and distribute cards
         ListDeNom = ListDeNom.shuffled()
+        val QTable = loadQTable(applicationContext.filesDir.path + "/merged_qtable.json")
         for (i in 0 until numIa) {
             val iaCards = GivePlayerCard(deck!!)
-            val newIa = IA(name = ListDeNom[i], money = startingAmount?.toIntOrNull() ?: 0, bet = 0, action = "", turn = i + 2, card1 = iaCards[0], card2 = iaCards[1])
-            if (loadedIaList.isNotEmpty()) {
-                when ((0..1).random()) {
-                    0 -> {
-                        // Fuse two of the top 3 best IA
-                        val bestIa1 = loadedIaList.random().clone()
-                        val bestIa2 = loadedIaList.filter { it != bestIa1 }.random().clone()
-                        var fusedIa = IA.crossover(bestIa1, bestIa2).clone()
-                        fusedIa.name = ListDeNom[i]
-                        fusedIa.money = startingAmount?.toIntOrNull() ?: 0
-                        fusedIa.action = ""
-                        fusedIa.bet = 0
-                        fusedIa.turn = i + 2
-                        fusedIa.card1 = iaCards[0]
-                        fusedIa.card2 = iaCards[1]
-                        iaList.add(fusedIa)
-                    }
-                    1 -> {
-                        // Fuse two of the top 3 best IA
-                        val aiToAdd = loadedIaList.random().clone()
-                        aiToAdd.name = ListDeNom[i]
-                        aiToAdd.money = startingAmount?.toIntOrNull() ?: 0
-                        aiToAdd.action = ""
-                        aiToAdd.bet = 0
-                        aiToAdd.turn = i + 2
-                        aiToAdd.card1 = iaCards[0]
-                        aiToAdd.card2 = iaCards[1]
-                        iaList.add(aiToAdd)
-                    }
-                }
-            } else {
-                // Create a new IA
-                iaList.add(newIa)
-            }
+            val newIa = IA(name = ListDeNom[i], initialMoney = startingAmount?.toIntOrNull() ?: 0, money = startingAmount?.toIntOrNull() ?: 0, bet = 0, action = "", turn = i + 2, card1 = iaCards[0], card2 = iaCards[1])
+
+            newIa.initQTable(QTable)
+            iaList.add(newIa)
         }
         updateIaViews(showAIAction = false, showAICards = false)
 
@@ -956,6 +840,7 @@ class GameActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.PlayerMonney).setText("${user?.money} €")
         findViewById<TextView>(R.id.tx_playerBet).setText("Bet: ${user?.bet} €")
+        findViewById<TextView>(R.id.tx_playerPos).setText("Pos: ${user?.turn}")
     }
 
     private fun setIaVisibility(numIa: Int) {
@@ -987,6 +872,7 @@ class GameActivity : AppCompatActivity() {
             if (iaItem.visibility == View.INVISIBLE) {
                 continue
             }else {
+                iaItem.findViewById<TextView>(R.id.IAposition).text = ia.turn.toString()
                 iaItem.findViewById<TextView>(R.id.iaName).text = ia.name
                 iaItem.findViewById<TextView>(R.id.iaMoney).text = "Money: ${ia.money} €"
 
@@ -1087,4 +973,20 @@ class GameActivity : AppCompatActivity() {
             findViewById<View>(buttonId)?.visibility = visibility
         }
     }
+    override fun finish() {
+        partyAlreadyStart = false
+        super.finish()
+    }
+    override fun onStop() {
+        super.onStop()
+        partyAlreadyStart = false
+        // stoppe les threads/timers ici si besoin
+        if (!isFinishing) finish()
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        partyAlreadyStart = false
+        // nettoyage mémoire ici
+    }
 }
+

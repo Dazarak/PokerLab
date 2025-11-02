@@ -1,5 +1,7 @@
 package fr.thomasdomenech.pokerlab.Class
 
+import fr.thomasdomenech.pokerlab.Model.Card
+
 class User {
     var name: String = ""
     var money: Int = 0

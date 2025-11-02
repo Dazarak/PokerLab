@@ -1,25 +1,15 @@
 package fr.thomasdomenech.pokerlab.Class
 
-import com.google.gson.Gson
-import fr.thomasdomenech.pokerlab.Tools.cardValueToRank
-import fr.thomasdomenech.pokerlab.Tools.evaluateHand
+import fr.thomasdomenech.pokerlab.Model.*
 import java.io.File
 import kotlin.Float
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.random.Random
 
-data class State(
-    val hand: String,
-    val stack: String,
-    val pot: String,
-    val phase: String,
-    val position: Double
-)
-
 data class IA(
-    val Q: MutableMap<State, MutableMap<Int, Double>> = mutableMapOf(),
+    val Q: MutableMap<State, Action> = mutableMapOf(),
+    val handHistory: MutableMap<State, Pair<String, Int>> = mutableMapOf(),
     var name: String,
+    var initialMoney: Int,
     var money: Int,
     var bet: Int = 0,
     var action: String = "",
@@ -30,105 +20,212 @@ data class IA(
     var gamma: Float = 0.9F,
     var epsilon: Float = 0.9F,
     var epsilon_decay: Float = 0.9995F,
-    var epsilon_min: Float = 0.05F
+    var epsilon_min: Float = 0.05F,
+    var aggressivity: Float = 1.0f,   // influence la fréquence de Raise
+    var prudence: Float = 1.0f,       // influence la fréquence de Fold/Check
+    var bluff: Float = 0.1f           // probabilité de Raise malgré une main faible
+
 ) {
 
-    fun getQ(state: State, action: Int): Double {
-        val stateMap = Q.getOrPut(state) {
-            ACTIONS.associateWith { Random.nextDouble(-0.1, 0.1) }.toMutableMap()
-        }
-        return stateMap.getOrDefault(action, 0.0)
-    }
-
-    fun setQ(state: State, action: Int, value: Double) {
-        val stateMap = Q.getOrPut(state) { mutableMapOf() }
-        stateMap[action] = value
-    }
-
-    fun getPossibleActions(amountToCall: Int, potSize: Int): List<Int> {
-        val possible = mutableSetOf(0) // 0 = Coucher
-        if (money >= amountToCall) possible.add(1) // Suivre / Checker
-        if (money > amountToCall + potSize) possible.add(2) // Relancer
-        if (money > 0) possible.add(3) // Tapis
-        return possible.toList()
-    }
-
-    fun chooseAction(state: State, amountToCall: Int, potSize: Int): Pair<Int, Int> {
-        val possibleActions = getPossibleActions(amountToCall, potSize)
-        if (possibleActions.isEmpty()) return 0 to 0
-
-        val action = if (Random.nextDouble() < epsilon) {
-            possibleActions.random()
-        } else {
-            possibleActions.maxByOrNull { getQ(state, it) } ?: 0
-        }
-
-        val amount = decideInvestmentAmount(action, amountToCall, potSize)
-        return action to amount
-    }
-
-    fun decideInvestmentAmount(action: Int, amountToCall: Int, potSize: Int): Int {
-        return when (action) {
-            0 -> 0
-            1 -> amountToCall
-            2 -> {
-                val minRaise = amountToCall * 2
-                val maxRaise = money
-                min(maxRaise, max(minRaise, (potSize * Random.nextDouble(0.5, 1.0)).toInt()))
+    // -------------------------
+    // ACTION SELECTION
+    // -------------------------
+    fun executeActionChoosed(amountToCall: Int, actionName: String, raisePercent: Int, potSize: Int)
+    {
+        when (actionName)
+        {
+            ActionString.Fold -> {
+                action = ActionString.Fold
             }
-            3 -> money
-            else -> 0
+
+            ActionString.Call -> {
+                val toCall = amountToCall - bet
+                if (toCall <= money) {
+                    money -= toCall
+                    bet += toCall
+                    action = ActionString.Call
+                } else {
+                    bet += money
+                    money = 0
+                    action = ActionString.AllIn
+                }
+            }
+
+            ActionString.Check -> {
+                action = ActionString.Check
+            }
+
+            ActionString.Raise -> {
+                val raiseAmount = (amountToCall - bet) + (potSize * (raisePercent / 100.0)).toInt().coerceAtLeast(1)
+                if (raiseAmount <= money) {
+                    money -= raiseAmount
+                    bet += raiseAmount
+                    action = ActionString.Raise
+                } else {
+                    bet += money
+                    money = 0
+                    action = ActionString.AllIn
+                }
+            }
         }
     }
+    /* Encienne version de la fonction play
+    fun play(state: State, amountToCall: Int, potSize: Int) {
+        val possibleActions = getPossibleActions(amountToCall, potSize)
+        val qValues = Q.getOrPut(state) { Action() }
 
-    fun updateQ(state: State, action: Int, reward: Double, nextState: State) {
-        val oldQ = getQ(state, action)
-        val maxNextQ = ACTIONS.maxOf { getQ(nextState, it) }
-        val newQ = oldQ + alpha * (reward + gamma * maxNextQ - oldQ)
-        setQ(state, action, newQ)
+        // Exploration ou exploitation
+        val doExplore = Random.nextDouble() < epsilon
+        val actionName: String = if (doExplore) { // Si doExplore == true on fait une action au hasard pour voire
+            // Exploration aléatoire
+            possibleActions.random()
+        } else { // Sinon : Exploitation de la meilleure action connue
+            listOf(ActionString.Fold to qValues.Fold,
+                ActionString.Check to qValues.Check,
+                ActionString.Call to qValues.Call,
+                ActionString.Raise to qValues.Raise)
+                .filter { it.first in possibleActions }
+                .maxByOrNull { it.second }?.first ?: ActionString.Fold
+        }
+
+        // Montant associé
+        val raisePercent = if (actionName == ActionString.Raise) {
+            qValues.RaisePourcent
+        } else 0
+
+        handHistory[state] = actionName to raisePercent
+
+        executeActionChoosed(amountToCall, actionName, raisePercent, potSize)
+    }*/
+
+    fun play(state: State, amountToCall: Int, potSize: Int) {
+        val possibleActions = getPossibleActions(amountToCall, potSize)
+        val qValues = Q.getOrPut(state) { Action() }
+
+        val doExplore = Random.nextDouble() < epsilon
+        var actionName: String
+
+        if (doExplore) {
+            actionName = possibleActions.random()
+        } else {
+            // Exploitation pondérée par agressivité et prudence
+            val baseAction = listOf(
+                ActionString.Fold to qValues.Fold / prudence,
+                ActionString.Check to qValues.Check,
+                ActionString.Call to qValues.Call,
+                ActionString.Raise to qValues.Raise * aggressivity
+            )
+                .filter { it.first in possibleActions }
+                .maxByOrNull { it.second }?.first ?: ActionString.Fold
+
+            actionName = baseAction
+        }
+
+        // Petit effet bluff : raise aléatoirement même sans raison
+        if (Random.nextDouble() < bluff && ActionString.Raise in possibleActions) {
+            actionName = ActionString.Raise
+        }
+
+        val raisePercent = if (actionName == ActionString.Raise) qValues.RaisePourcent else 0
+        handHistory[state] = actionName to raisePercent
+        executeActionChoosed(amountToCall, actionName, raisePercent, potSize)
+    }
+
+    fun getPossibleActions(amountToCall: Int, potSize: Int): List<String> {
+        val possible = mutableListOf<String>()
+        val toCall = (amountToCall - bet).coerceAtLeast(0)
+
+        if (toCall == 0) {
+            possible.add(ActionString.Check)
+        } else {
+            possible.add(ActionString.Fold)
+            if (money >= toCall) possible.add(ActionString.Call)
+        }
+
+        val minRaise = toCall + 1
+        if (money > minRaise) possible.add(ActionString.Raise)
+
+        return possible
+    }
+
+    // -------------------------
+    // Q-UPDATE (APPRENTISSAGE)
+    // -------------------------
+    fun learnFromResult() {
+        val reward = (money - initialMoney).toDouble()
+
+        for ((state, actionPair) in handHistory) {
+            val (actionName, raisePercent) = actionPair
+            updateQ(state, actionName, reward, null)
+        }
+
+        // On vide l’historique pour la prochaine main
+        handHistory.clear()
+    }
+
+    fun updateQ(
+        state: State,
+        actionName: String,
+        reward: Double,
+        nextState: State?
+    ) {
+        val current = Q.getOrPut(state) { Action() }
+
+        val oldValue = when (actionName) {
+            ActionString.Check -> current.Check
+            ActionString.Call -> current.Call
+            ActionString.Fold -> current.Fold
+            ActionString.Raise -> current.Raise
+            else -> 0f
+        }
+
+        // Valeur future estimée
+        val futureValue = if (nextState != null && Q.containsKey(nextState)) {
+            val next = Q[nextState]!!
+            maxOf(next.Check, next.Call, next.Fold, next.Raise)
+        } else 0f
+
+        // Mise à jour Q-learning
+        val newValue = oldValue.toDouble() + alpha * (reward + (gamma * futureValue.toDouble()) - oldValue.toDouble())
+
+        when (actionName) {
+            ActionString.Check -> current.Check = newValue
+            ActionString.Call -> current.Call = newValue
+            ActionString.Fold -> current.Fold = newValue
+            ActionString.Raise -> current.Raise = newValue
+        }
+        if (actionName == ActionString.Raise) {
+            // Mise à jour du Q-value
+            current.Raise = newValue
+            // Ajustement du RaisePourcent selon la récompense reçue
+            val oldPercent = current.RaisePourcent
+            val updatedPercent = (oldPercent * 0.8 + (reward.coerceIn(0.0, 100.0) * 0.2)).toInt()
+            current.RaisePourcent = updatedPercent
+        }
+
+        // Décroissance de epsilon
         if (epsilon > epsilon_min) epsilon *= epsilon_decay
     }
 
-    fun clone(): IA {
-        val newQ = Q.mapValues { (_, inner) -> inner.toMutableMap() }.toMutableMap()
-        return IA(
-            Q = newQ,
-            name = name,
-            money = money,
-            bet = bet,
-            action = action,
-            turn = turn,
-            card1 = card1?.copy(),
-            card2 = card2?.copy(),
-            alpha = alpha,
-            gamma = gamma,
-            epsilon = epsilon,
-            epsilon_decay = epsilon_decay,
-            epsilon_min = epsilon_min
-        )
+    fun initQTable(newQ: Map<State, Action>) {
+        Q.clear()
+        Q.putAll(newQ)
     }
-
-    fun save(filePath: String) {
-        try {
-            val gson = Gson()
-            File(filePath).writeText(gson.toJson(this))
-        } catch (e: Exception) {
-            println("Erreur lors de la sauvegarde de l'IA : ${e.message}")
-        }
-    }
-
-    companion object {
-        val ACTIONS = listOf(0, 1, 2, 3)
-
-        fun load(filePath: String): IA? {
-            return try {
-                val file = File(filePath)
-                if (!file.exists()) return null
-                val gson = Gson()
-                gson.fromJson(file.readText(), IA::class.java)
-            } catch (e: Exception) {
-                println("Erreur lors du chargement de l'IA : ${e.message}")
-                null
+    // -------------------------
+    // STYLE D'ÉVOLUTION SIMPLE
+    // -------------------------
+    fun evolveBehavior(resultGain: Int) {
+        // Adaptation simple selon le résultat de la main
+        when {
+            resultGain > 0 -> {
+                aggressivity = (aggressivity * 1.02f).coerceAtMost(2.0f)
+                prudence = (prudence * 0.98f).coerceAtLeast(0.5f)
+                bluff = (bluff * 1.05f).coerceAtMost(0.4f)
+            }
+            resultGain < 0 -> {
+                aggressivity = (aggressivity * 0.97f).coerceAtLeast(0.5f)
+                prudence = (prudence * 1.03f).coerceAtMost(2.0f)
+                bluff = (bluff * 0.95f).coerceAtLeast(0.05f)
             }
         }
     }

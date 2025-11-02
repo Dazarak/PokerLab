@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
+    android:background="@color/backG"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
@@ -59,6 +60,7 @@
 
             <EditText
                 android:id="@+id/startingAmount"
+                android:inputType="number"
                 style="@style/EditTextStyle"
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
@@ -112,7 +114,12 @@
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/border_textbar_rounded_corner"
-                android:text="2" />
+                android:text="2"
+                android:inputType="number"
+                android:focusable="false"
+                android:clickable="false"
+                android:cursorVisible="false"
+                android:longClickable="false" />
 
             <SeekBar
                 android:id="@+id/smallBlindSeekBar"
@@ -150,7 +157,12 @@
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/border_textbar_rounded_corner"
-                android:text="2" />
+                android:text="2"
+                android:inputType="number"
+                android:focusable="false"
+                android:clickable="false"
+                android:cursorVisible="false"
+                android:longClickable="false"  />
 
             <SeekBar
                 android:id="@+id/numIaSeekBar"

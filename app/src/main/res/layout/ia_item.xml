@@ -11,6 +11,18 @@
             android:gravity="center"
             android:orientation="horizontal">
 
+            <TextView
+                android:id="@+id/IAposition"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textColor="@color/backG"
+                android:gravity="start"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:fontFamily="@font/casino"
+                android:orientation="vertical"/>
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -24,7 +36,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="IA Name"
-                    android:textColor="#FFF"
+                    android:textColor="@color/backG"
                     android:textSize="16sp" />
 
                 <TextView
@@ -33,7 +45,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Money: 0"
-                    android:textColor="#FFF"
+                    android:textColor="@color/backG"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -51,7 +63,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Action: None"
-                    android:textColor="#FFF"
+                    android:textColor="@color/backG"
                     android:textSize="14sp" />
 
                 <TextView
@@ -60,7 +72,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Bet: 0"
-                    android:textColor="#FFF"
+                    android:textColor="@color/backG"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -70,14 +82,8 @@
                 android:layout_height="wrap_content"
                 android:padding="0dp"
                 android:layout_margin="5dp"
-                android:gravity="start"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
+                android:gravity="center"
+                android:orientation="horizontal">
                     <include
                         android:id="@+id/AiCard1"
                         layout="@layout/card_item"
@@ -93,18 +99,16 @@
                         android:layout_marginEnd="2dp"
                         android:layout_width="30dp"
                         android:layout_height="50dp"  />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/iaHand"
-                    android:layout_marginTop="5dp"
-                    android:fontFamily="@font/casino"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Hand: "
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="#FFF"
-                    android:textSize="14sp" />
+                    <TextView
+                        android:id="@+id/iaHand"
+                        android:layout_marginTop="5dp"
+                        android:fontFamily="@font/casino"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hand: "
+                        android:layout_gravity="center_vertical"
+                        android:textColor="@color/backG"
+                        android:textSize="14sp" />
             </LinearLayout>
 
         </LinearLayout>

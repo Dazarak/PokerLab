@@ -1,5 +1,4 @@
-// Deck.kt
-package fr.thomasdomenech.pokerlab.Class
+package fr.thomasdomenech.pokerlab.Model
 
 import fr.thomasdomenech.pokerlab.R
 
