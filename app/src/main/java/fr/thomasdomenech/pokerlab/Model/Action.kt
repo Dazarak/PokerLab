@@ -5,5 +5,5 @@ data class Action(
     var Call: Double = 0.0,
     var Fold: Double = 0.0,
     var Raise: Double = 0.0,
-    var RaisePourcent : Int = 10
+    var RaisePourcent : Int = 2
 )

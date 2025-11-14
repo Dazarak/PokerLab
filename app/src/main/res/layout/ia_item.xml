@@ -67,6 +67,16 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/iaHand"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:fontFamily="@font/casino"
+                    android:text="Hand: "
+                    android:textColor="@color/backG"
+                    android:textSize="14sp" />
+
+                <TextView
                     android:id="@+id/iaBet"
                     android:fontFamily="@font/casino"
                     android:layout_width="wrap_content"
@@ -99,16 +109,7 @@
                         android:layout_marginEnd="2dp"
                         android:layout_width="30dp"
                         android:layout_height="50dp"  />
-                    <TextView
-                        android:id="@+id/iaHand"
-                        android:layout_marginTop="5dp"
-                        android:fontFamily="@font/casino"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hand: "
-                        android:layout_gravity="center_vertical"
-                        android:textColor="@color/backG"
-                        android:textSize="14sp" />
+
             </LinearLayout>
 
         </LinearLayout>

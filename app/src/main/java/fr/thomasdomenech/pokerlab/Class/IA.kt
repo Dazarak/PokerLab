@@ -21,16 +21,16 @@ data class IA(
     var epsilon: Float = 0.9F,
     var epsilon_decay: Float = 0.9995F,
     var epsilon_min: Float = 0.05F,
-    var aggressivity: Float = 1.0f,   // influence la fréquence de Raise
-    var prudence: Float = 1.0f,       // influence la fréquence de Fold/Check
-    var bluff: Float = 0.1f           // probabilité de Raise malgré une main faible
+    var aggressivity: Float = 1.0f,      // influence la fréquence de Raise
+    var prudence: Float = 1.0f,          // influence la fréquence de Fold/Check
+    var bluff: Float = 0.1f              // probabilité de Raise malgré une main faible
 
 ) {
 
     // -------------------------
     // ACTION SELECTION
     // -------------------------
-    fun executeActionChoosed(amountToCall: Int, actionName: String, raisePercent: Int, potSize: Int)
+    fun executeActionChoosed(amountToCall: Int, actionName: String, raisePercent: Int, bigBlind: Int)
     {
         when (actionName)
         {
@@ -56,7 +56,7 @@ data class IA(
             }
 
             ActionString.Raise -> {
-                val raiseAmount = (amountToCall - bet) + (potSize * (raisePercent / 100.0)).toInt().coerceAtLeast(1)
+                val raiseAmount = (amountToCall - bet) + (bigBlind * raisePercent).coerceAtLeast(1)
                 if (raiseAmount <= money) {
                     money -= raiseAmount
                     bet += raiseAmount
@@ -69,37 +69,9 @@ data class IA(
             }
         }
     }
-    /* Encienne version de la fonction play
-    fun play(state: State, amountToCall: Int, potSize: Int) {
-        val possibleActions = getPossibleActions(amountToCall, potSize)
-        val qValues = Q.getOrPut(state) { Action() }
 
-        // Exploration ou exploitation
-        val doExplore = Random.nextDouble() < epsilon
-        val actionName: String = if (doExplore) { // Si doExplore == true on fait une action au hasard pour voire
-            // Exploration aléatoire
-            possibleActions.random()
-        } else { // Sinon : Exploitation de la meilleure action connue
-            listOf(ActionString.Fold to qValues.Fold,
-                ActionString.Check to qValues.Check,
-                ActionString.Call to qValues.Call,
-                ActionString.Raise to qValues.Raise)
-                .filter { it.first in possibleActions }
-                .maxByOrNull { it.second }?.first ?: ActionString.Fold
-        }
-
-        // Montant associé
-        val raisePercent = if (actionName == ActionString.Raise) {
-            qValues.RaisePourcent
-        } else 0
-
-        handHistory[state] = actionName to raisePercent
-
-        executeActionChoosed(amountToCall, actionName, raisePercent, potSize)
-    }*/
-
-    fun play(state: State, amountToCall: Int, potSize: Int) {
-        val possibleActions = getPossibleActions(amountToCall, potSize)
+    fun play(state: State, amountToCall: Int, bigBlind: Int) {
+        val possibleActions = getPossibleActions(amountToCall)
         val qValues = Q.getOrPut(state) { Action() }
 
         val doExplore = Random.nextDouble() < epsilon
@@ -114,13 +86,10 @@ data class IA(
                 ActionString.Check to qValues.Check,
                 ActionString.Call to qValues.Call,
                 ActionString.Raise to qValues.Raise * aggressivity
-            )
-                .filter { it.first in possibleActions }
-                .maxByOrNull { it.second }?.first ?: ActionString.Fold
+            ).filter { it.first in possibleActions }.maxByOrNull { it.second }?.first ?: ActionString.Fold
 
             actionName = baseAction
         }
-
         // Petit effet bluff : raise aléatoirement même sans raison
         if (Random.nextDouble() < bluff && ActionString.Raise in possibleActions) {
             actionName = ActionString.Raise
@@ -128,10 +97,10 @@ data class IA(
 
         val raisePercent = if (actionName == ActionString.Raise) qValues.RaisePourcent else 0
         handHistory[state] = actionName to raisePercent
-        executeActionChoosed(amountToCall, actionName, raisePercent, potSize)
+        executeActionChoosed(amountToCall, actionName, raisePercent, bigBlind)
     }
 
-    fun getPossibleActions(amountToCall: Int, potSize: Int): List<String> {
+    fun getPossibleActions(amountToCall: Int): List<String> {
         val possible = mutableListOf<String>()
         val toCall = (amountToCall - bet).coerceAtLeast(0)
 
@@ -155,11 +124,9 @@ data class IA(
         val reward = (money - initialMoney).toDouble()
 
         for ((state, actionPair) in handHistory) {
-            val (actionName, raisePercent) = actionPair
+            val (actionName, _) = actionPair
             updateQ(state, actionName, reward, null)
         }
-
-        // On vide l’historique pour la prochaine main
         handHistory.clear()
     }
 
@@ -195,11 +162,11 @@ data class IA(
             ActionString.Raise -> current.Raise = newValue
         }
         if (actionName == ActionString.Raise) {
-            // Mise à jour du Q-value
             current.Raise = newValue
-            // Ajustement du RaisePourcent selon la récompense reçue
+            val adjustment = (reward / 100.0).coerceIn(-1.0, 1.0)
             val oldPercent = current.RaisePourcent
-            val updatedPercent = (oldPercent * 0.8 + (reward.coerceIn(0.0, 100.0) * 0.2)).toInt()
+            val updatedPercent = (oldPercent + adjustment * 2).toInt()
+                .coerceIn(1, 10)
             current.RaisePourcent = updatedPercent
         }
 

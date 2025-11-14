@@ -138,32 +138,17 @@ class SettingsActivity : AppCompatActivity()  {
     }
 
     private fun resetAIData() {
-        val file1 = File(applicationContext.filesDir.path + "/best_ia.json")
-        val file2 = File(applicationContext.filesDir.path + "/second_ia.json")
-        val file3 = File(applicationContext.filesDir.path + "/third_ia.json")
+        val file1 = File(applicationContext.filesDir.path + "/merged_qtable.json")
 
-        var allDeleted = true
         var NothingToDelete = true
 
         if (file1.exists()) {
             NothingToDelete = false
             file1.delete()
         }
-        if (file2.exists()) {
-            NothingToDelete = false
-            file2.delete()
-        }
-        if (file3.exists()) {
-            NothingToDelete = false
-            file3.delete()
-        }
 
-        if (allDeleted && !NothingToDelete) {
+        if (!NothingToDelete) {
             Toast.makeText(this, "AI data reset", Toast.LENGTH_SHORT).show()
-        } else if (NothingToDelete) {
-            Toast.makeText(this, "Nothing to reset", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "An error occurred while resetting the AI files", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -211,10 +196,7 @@ class SettingsActivity : AppCompatActivity()  {
 
 
     fun isThereSomeAIOutThere(): Boolean {
-        val file1 = File(applicationContext.filesDir.path + "/best_ia.json")
-        val file2 = File(applicationContext.filesDir.path + "/second_ia.json")
-        val file3 = File(applicationContext.filesDir.path + "/third_ia.json")
-
-        return file1.exists() || file2.exists() || file3.exists()
+        val file1 = File(applicationContext.filesDir.path + "/merged_qtable.json")
+        return file1.exists()
     }
 }

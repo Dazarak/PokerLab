@@ -17,7 +17,7 @@ import java.io.File
 
 data class PlayerHand(val name: String, val hand: String, val highCards: List<Int>)
 
-fun evaluateHand(cards: List<Card>): PlayerHand {
+fun evaluateHand(cards: List<Card>): PlayerHand { // TODO : penser a remplacer les texts par des Int plus simple a comparer et re utiliser
     val values = cards.map { it.value }
     val symbols = cards.map { it.symbol }
 
@@ -55,7 +55,7 @@ fun getWinnerName(players: List<Player>, communityCards: List<Card?>): String {
         Log.e("getWinnerName", "No valid hands found. There should always be at least one winner.")
         return "No winner"
     }
-    val sortedHands = hands.sortedWith { hand1, hand2 -> compareHands(hand1, hand2) }
+    val sortedHands = hands.sortedWith { hand1, hand2 -> compareHands(hand1, hand2) } // TODO : comprendre pourquoi il n'y a que hand1 et Hand2 et pas toute les mains de tout les joueurs
     val maxRank = sortedHands.last().let { handToValueRank(it) }
     val topHands = sortedHands.filter { hand -> handToValueRank(hand) == maxRank }
 

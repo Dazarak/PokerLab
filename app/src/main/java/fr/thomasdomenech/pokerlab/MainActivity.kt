@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                 val startingAmount = s.toString().toIntOrNull() ?: 0
                 if (startingAmount < 50)
                     startingAmountEditText.setText("50")
-                if (startingAmount > 100000)
+                if (startingAmount > 10000)
                     startingAmountEditText.setText("10000")
             }
 

@@ -30,13 +30,15 @@ data class State(
 
     companion object {
         fun abstractCards(cards: List<Card>): List<Int> {
-            return cards.map { card ->
-                when (card.value) {
-                    "2", "3", "4", "5" -> 0
-                    "6", "7", "8", "9" -> 1
-                    else -> 2
+            return cards
+                .map { card ->
+                    when (card.value) {
+                        "2", "3", "4", "5" -> 0
+                        "6", "7", "8", "9" -> 1
+                        else -> 2
+                    }
                 }
-            }
+                .sorted()
         }
         fun abstractPosition(position: Int, nbPlayer: Int): Int {
             val fraction = position.toDouble() / nbPlayer
@@ -46,6 +48,5 @@ data class State(
                 else -> 2                 // Late / fin
             }
         }
-
     }
 }
